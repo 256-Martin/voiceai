@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title> Martin - Gemini Voice Assistant</title>
+    <style>
+        /* Copy all the styles from the previous version */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 800px;
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #4285F4 0%, #9B72CB 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+    .header div {
+        background: url(img5.jpg);
+        width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid white;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    margin-bottom: 10px;
+    background-size: cover;  
+    background-position: center;
+    background-repeat: no-repeat;
+    }
+    .header img {
+        
+    }
+    .footer {
+        text-align: center;
+        color: black;
+        background: linear-gradient(135deg, #4285F4 0%, #9B72CB 100%);;
+    }
+    .header div:hover {
+        transform: scale(1.05);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+    }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .header p { opacity: 0.9; font-size: 1.1em; }
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .message { margin-bottom: 20px; display: flex; flex-direction: column; }
+        .user-message { align-items: flex-end; }
+        .assistant-message { align-items: flex-start; }
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 20px;
+            font-size: 1em;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .user-message .message-bubble {
+            background: #4285F4;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        .assistant-message .message-bubble {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .timestamp {
+            font-size: 0.75em;
+            color: #999;
+            margin-top: 5px;
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+        .mic-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .mic-button {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4285F4 0%, #9B72CB 100%);
+            border: none;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 20px rgba(66, 133, 244, 0.4);
+            flex-shrink: 0;
+        }
+        .mic-button:hover { transform: scale(1.1); }
+        .mic-button.listening {
+            animation: pulse 1.5s infinite;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .mic-button.processing {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            animation: none;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4); }
+            50% { transform: scale(1.1); box-shadow: 0 5px 30px rgba(245, 87, 108, 0.6); }
+            100% { transform: scale(1); box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4); }
+        }
+        .status {
+            font-size: 1.1em;
+            color: #666;
+            flex-grow: 1;
+        }
+        .status.listening { color: #f5576c; font-weight: bold; }
+        .status.processing { color: #f59e0b; font-weight: bold; }
+        .text-input {
+            display: flex;
+            gap: 10px;
+        }
+        .text-input input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+        .text-input input:focus {
+            outline: none;
+            border-color: #4285F4;
+        }
+        .text-input button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #4285F4 0%, #9B72CB 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+        .text-input button:hover { transform: translateY(-2px); }
+        .browser-warning {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            margin: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        .thinking {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 10px;
+            color: #666;
+        }
+        .thinking span {
+            width: 8px;
+            height: 8px;
+            background: #4285F4;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+        .thinking span:nth-child(1) { animation-delay: -0.32s; }
+        .thinking span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .suggestion-chip {
+            padding: 8px 15px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #666;
+            cursor: pointer;
+        }
+        .suggestion-chip:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+        .gemini-badge {
+            background: #e8f0fe;
+            border-left: 4px solid #4285F4;
+            padding: 15px;
+            margin: 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .gemini-badge span {
+            background: #4285F4;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div></div>
+            <h1>Martin Voice Assistant</h1>
+            <p>Created by Kisembo Martin from Uganda 🇺🇬</p>
+        </div>
+        
+        <div class="gemini-badge">
+            <div>✨ My name is <strong>Martin</strong> - Created by Kisembo Martin from Hoima City, Bunyoro Kingdom, Uganda.
+                You can contact him on whatsapp 256762621780.
+            </div>
+            <span>✅ Active</span>
+        </div>
+        
+        <div id="browser-warning" class="browser-warning">
+            ⚠️ Your browser has limited voice support. You can still type!
+        </div>
+        
+        <div class="chat-container" id="chat-container">
+            <div class="message assistant-message">
+                <div class="message-bubble">
+                    👋 Hi! My name is Martin. I was created by Kisembo Martin from Hoima City, Bunyoro Kingdom, Uganda. How can I help you today?
+                </div>
+                <div class="timestamp">Just now</div>
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <div class="mic-container">
+                <button class="mic-button" id="mic-button" title="Click to start/stop voice">
+                    🎤
+                </button>
+                <div class="status" id="status">Click the mic to start speaking.</div>
+            </div>
+            
+            <div class="text-input">
+                <input type="text" id="text-input" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendTextMessage()">Send</button>
+            </div>
+            
+            <div class="suggestions" id="suggestions">
+                <span class="suggestion-chip" onclick="useSuggestion('Hello Martin!')">Hello Martin!</span>
+                <span class="suggestion-chip" onclick="useSuggestion('Who created you?')">Who created you?</span>
+                <span class="suggestion-chip" onclick="useSuggestion('Where are you from?')">Where are you from?</span>
+                <span class="suggestion-chip" onclick="useSuggestion('Tell me about your creator')">About your creator</span>
+                <span class="suggestion-chip" onclick="useSuggestion('What is your name?')">What is your name?</span>
+                <span class="suggestion-chip" onclick="useSuggestion('Tell me a joke')">Tell me a joke</span>
+            </div>
+        </div>
+        <div class="footer">
+            <p>developed by Kisembo Martin<br>256762621780</p>
+            <p>&copy:All rights reserved MARTIN</p>
+        </div>
+    </div>
+
+    <script>
+        // =============================================
+        // YOUR WORKING GEMINI API KEY
+        // =============================================
+        const GEMINI_API_KEY = "AIzaSyCMulUvK_I5sh78gvMWMe1upEG6fsULKsI";
+        
+        // Creator information
+        const CREATOR_NAME = "Kisembo Martin";
+        const CREATOR_LOCATION = "Hoima City, Bunyoro Kingdom, Uganda";
+        const ASSISTANT_NAME = "Martin";
+        
+        // Check browser support
+        const isSpeechSupported = 'webkitSpeechRecognition' in window || 'SpeechRecognition' in window;
+        const isSpeechSynthesisSupported = 'speechSynthesis' in window;
+        
+        if (!isSpeechSupported) {
+            document.getElementById('browser-warning').style.display = 'block';
+        }
+        
+        // Voice recognition setup
+        let recognition = null;
+        let isListening = false;
+        let isProcessing = false;
+        
+        if (isSpeechSupported) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            recognition.maxAlternatives = 1;
+        }
+        
+        // Custom response for creator questions
+        function getCreatorResponse(userInput) {
+            const input = userInput.toLowerCase();
+            
+            // Check for questions about creator
+            if (input.includes('who created you') || 
+                input.includes('who made you') || 
+                input.includes('who developed you') || 
+                input.includes('who is your creator') ||
+                input.includes('who built you') ||
+                input.includes('your creator') ||
+                (input.includes('created') && input.includes('you')) ||
+                (input.includes('made') && input.includes('you'))) {
+                return `I was created by ${CREATOR_NAME} from ${CREATOR_LOCATION}. He is my developer!`;
+            }
+            
+            // Check for questions about name
+            if (input.includes('what is your name') || 
+                input.includes('your name') || 
+                input.includes('who are you') ||
+                input.includes('call you')) {
+                return `My name is ${ASSISTANT_NAME}! I was created by ${CREATOR_NAME} from ${CREATOR_LOCATION}.`;
+            }
+            
+            // Check for questions about location/origin
+            if (input.includes('where are you from') || 
+                input.includes('where do you come from') ||
+                input.includes('your origin') ||
+                input.includes('your location')) {
+                return `I was created in ${CREATOR_LOCATION} by ${CREATOR_NAME}. That's my home! 🇺🇬`;
+            }
+            
+            // Check for questions about Uganda/Bunyoro
+            if (input.includes('uganda') || 
+                input.includes('bunyoro') || 
+                input.includes('hoima') ||
+                input.includes('kingdom')) {
+                return `Yes! My creator ${CREATOR_NAME} is from Hoima City in the Bunyoro Kingdom, Uganda. It's a beautiful place! 🇺🇬`;
+            }
+            
+            return null; // No match, use Gemini
+        }
+        
+        // Gemini API call with latest models
+        async function getGeminiResponse(userInput) {
+            // First check if it's a creator-related question
+            const creatorResponse = getCreatorResponse(userInput);
+            if (creatorResponse) {
+                return creatorResponse;
+            }
+            
+            // Latest models from your API response
+            const modelsToTry = [
+                "gemini-2.0-flash",      // Fast, efficient model (confirmed working)
+                "gemini-2.5-flash",      // Latest flash model
+                "gemini-1.5-flash",      // Reliable fallback
+                "gemini-pro"              // Original pro model
+            ];
+            
+            let lastError = null;
+            
+            for (const model of modelsToTry) {
+                try {
+                    console.log(`Trying model: ${model}`);
+                    
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{
+                                    text: userInput
+                                }]
+                            }],
+                            generationConfig: {
+                                temperature: 0.7,
+                                maxOutputTokens: 300,
+                                topP: 0.95,
+                                topK: 64
+                            }
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log(`✅ Success with model: ${model}`);
+                        
+                        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+                            return data.candidates[0].content.parts[0].text;
+                        }
+                    } else {
+                        const errorData = await response.json();
+                        console.log(`Model ${model} failed:`, errorData.error?.message);
+                        lastError = errorData;
+                    }
+                    
+                } catch (error) {
+                    console.log(`Error with model ${model}:`, error.message);
+                    lastError = error;
+                }
+            }
+            
+            // Fallback response with creator info
+            return getLocalResponse(userInput);
+        }
+        
+        // Local responses with creator info
+        function getLocalResponse(userInput) {
+            const input = userInput.toLowerCase();
+            
+            // Creator questions
+            if (input.includes('who created you') || input.includes('who made you') || input.includes('who developed you')) {
+                return `I was created by ${CREATOR_NAME} from ${CREATOR_LOCATION}!`;
+            }
+            
+            if (input.includes('what is your name') || input.includes('your name')) {
+                return `My name is ${ASSISTANT_NAME}! I was created by ${CREATOR_NAME} from ${CREATOR_LOCATION}.`;
+            }
+            
+            if (input.includes('where are you from')) {
+                return `I'm from ${CREATOR_LOCATION}, created by ${CREATOR_NAME}! 🇺🇬`;
+            }
+            
+            if (input.includes('hello') || input.includes('hi')) {
+                return `Hello! I'm ${ASSISTANT_NAME}, created by ${CREATOR_NAME}. How can I help you today?`;
+            } else if (input.includes('joke')) {
+                return "Why don't scientists trust atoms? Because they make up everything! 😄";
+            } else if (input.includes('how are you')) {
+                return `I'm doing great! ${CREATOR_NAME} created me well! How can I help you?`;
+            } else if (input.includes('gemini')) {
+                return "Gemini is Google's latest AI model, but I was created by ${CREATOR_NAME} from Uganda!";
+            } else {
+                return `That's interesting! By the way, I'm ${ASSISTANT_NAME}, created by ${CREATOR_NAME} from ${CREATOR_LOCATION}. Tell me more!`;
+            }
+        }
+        
+        // Add message to chat
+        function addMessage(text, isUser) {
+            const chatContainer = document.getElementById('chat-container');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+            
+            messageDiv.innerHTML = `
+                <div class="message-bubble">
+                    ${text}
+                </div>
+                <div class="timestamp">${new Date().toLocaleTimeString()}</div>
+            `;
+            
+            chatContainer.appendChild(messageDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Show thinking indicator
+        function showThinking() {
+            const chatContainer = document.getElementById('chat-container');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'message assistant-message';
+            thinkingDiv.id = 'thinking-indicator';
+            thinkingDiv.innerHTML = `
+                <div class="thinking">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatContainer.appendChild(thinkingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        // Remove thinking indicator
+        function removeThinking() {
+            const thinking = document.getElementById('thinking-indicator');
+            if (thinking) thinking.remove();
+        }
+        
+        // Speak response
+        async function speakResponse(text) {
+            return new Promise((resolve) => {
+                if (!isSpeechSynthesisSupported) {
+                    resolve();
+                    return;
+                }
+                
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                
+                utterance.onend = () => resolve();
+                utterance.onerror = () => resolve();
+                
+                window.speechSynthesis.speak(utterance);
+            });
+        }
+        
+        // Process user input
+        async function processInput(text) {
+            if (!text.trim() || isProcessing) return;
+            
+            isProcessing = true;
+            
+            document.getElementById('mic-button').classList.remove('listening');
+            document.getElementById('mic-button').classList.add('processing');
+            document.getElementById('status').textContent = `🤔 ${ASSISTANT_NAME} is thinking...`;
+            document.getElementById('status').classList.remove('listening');
+            document.getElementById('status').classList.add('processing');
+            
+            addMessage(text, true);
+            showThinking();
+            
+            const responseText = await getGeminiResponse(text);
+            
+            removeThinking();
+            addMessage(responseText, false);
+            await speakResponse(responseText);
+            
+            isProcessing = false;
+            
+            if (isListening) {
+                document.getElementById('mic-button').classList.remove('processing');
+                document.getElementById('mic-button').classList.add('listening');
+                document.getElementById('status').textContent = `🎤 Listening... (speak to ${ASSISTANT_NAME})`;
+                document.getElementById('status').classList.add('listening');
+                document.getElementById('status').classList.remove('processing');
+                
+                setTimeout(() => {
+                    if (isListening && !isProcessing) {
+                        try {
+                            recognition.start();
+                        } catch (error) {}
+                    }
+                }, 300);
+            } else {
+                document.getElementById('mic-button').classList.remove('processing', 'listening');
+                document.getElementById('status').textContent = `Click the mic to speak to ${ASSISTANT_NAME}`;
+                document.getElementById('status').classList.remove('listening', 'processing');
+            }
+        }
+        
+        // Voice recognition handlers
+        if (recognition) {
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('mic-button').classList.add('listening');
+                document.getElementById('status').textContent = `🎤 Listening... (speak to ${ASSISTANT_NAME})`;
+                document.getElementById('status').classList.add('listening');
+            };
+            
+            recognition.onend = () => {
+                if (isListening && !isProcessing) {
+                    try {
+                        recognition.start();
+                    } catch (error) {}
+                }
+            };
+            
+            recognition.onerror = (event) => {
+                if (event.error === 'not-allowed') {
+                    stopListening();
+                    document.getElementById('status').textContent = '❌ Microphone access denied';
+                }
+            };
+            
+            recognition.onresult = (event) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        transcript = event.results[i][0].transcript.trim();
+                        break;
+                    }
+                }
+                
+                if (transcript && !isProcessing) {
+                    if (isListening) {
+                        try {
+                            recognition.stop();
+                        } catch (error) {}
+                    }
+                    processInput(transcript);
+                }
+            };
+        }
+        
+        function toggleListening() {
+            if (!isSpeechSupported) {
+                alert('Voice recognition not supported. Please type instead.');
+                return;
+            }
+            
+            if (isListening || isProcessing) {
+                stopListening();
+            } else {
+                startListening();
+            }
+        }
+        
+        function startListening() {
+            try {
+                isListening = true;
+                recognition.start();
+            } catch (error) {
+                isListening = false;
+            }
+        }
+        
+        function stopListening() {
+            isListening = false;
+            if (!isProcessing) {
+                try {
+                    recognition.stop();
+                } catch (error) {}
+            }
+            document.getElementById('mic-button').classList.remove('listening', 'processing');
+            document.getElementById('status').textContent = `Click the mic to speak to ${ASSISTANT_NAME}`;
+            document.getElementById('status').classList.remove('listening', 'processing');
+        }
+        
+        function sendTextMessage() {
+            if (isProcessing) return;
+            
+            const input = document.getElementById('text-input');
+            const text = input.value.trim();
+            if (text) {
+                if (isListening) {
+                    stopListening();
+                }
+                processInput(text);
+                input.value = '';
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendTextMessage();
+            }
+        }
+        
+        function useSuggestion(text) {
+            document.getElementById('text-input').value = text;
+            sendTextMessage();
+        }
+        
+        document.getElementById('mic-button').addEventListener('click', toggleListening);
+        
+        if (isSpeechSynthesisSupported) {
+            window.speechSynthesis.getVoices();
+        }
+        
+        window.sendTextMessage = sendTextMessage;
+        window.handleKeyPress = handleKeyPress;
+        window.useSuggestion = useSuggestion;
+    </script>
+</body>
+</html>
